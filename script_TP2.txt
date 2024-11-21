@@ -1,0 +1,368 @@
+
+
+**************************************************************************
+Création de l'utilisateur GI2 et l'affectation des privilèges convenables
+**************************************************************************
+
+create user TPGI2 identified by 1234;
+
+Grant connect, resource to TPGI2;
+
+******************************************************************
+Création des tables
+******************************************************************
+-- Création de la table e_continent
+CREATE TABLE e_continent (
+    continent_no NUMBER(7) NOT NULL,
+    nom VARCHAR2(50) NOT NULL,
+    CONSTRAINT pk_e_continent PRIMARY KEY (continent_no)
+);
+
+-- Création de la table e_service
+CREATE TABLE e_service (
+    service_no NUMBER(7) NOT NULL,
+    nom VARCHAR2(25) NOT NULL,
+    continent_no NUMBER(7),
+    CONSTRAINT pk_e_service PRIMARY KEY (service_no),
+    CONSTRAINT fk_e_service_continent FOREIGN KEY (continent_no) REFERENCES e_continent(continent_no)
+);
+
+-- Création de la table e_image
+CREATE TABLE e_image (
+    image_no NUMBER(7) NOT NULL,
+    format VARCHAR2(25),
+    nom_fichier VARCHAR2(21),
+    validite VARCHAR2(1),
+    image LONG RAW,
+    CONSTRAINT pk_e_image PRIMARY KEY (image_no)
+);
+
+-- Création de la table e_texte
+CREATE TABLE e_texte (
+    texte_no NUMBER(7) NOT NULL,
+    validite VARCHAR2(1),
+    nom_fichier VARCHAR2(25),
+    texte VARCHAR2(2000),
+    CONSTRAINT pk_e_texte PRIMARY KEY (texte_no)
+);
+
+
+-- Création de la table e_produit
+CREATE TABLE e_produit (
+    produit_no NUMBER(7) NOT NULL,
+    nom VARCHAR2(50),
+    description VARCHAR2(50),
+    texte_no NUMBER(7),
+    image_no NUMBER(7),
+    prix_conseille NUMBER(11, 2),
+    CONSTRAINT pk_e_produit PRIMARY KEY (produit_no),
+    CONSTRAINT fk_e_produit_texte FOREIGN KEY (texte_no) REFERENCES e_texte(texte_no),
+    CONSTRAINT fk_e_produit_image FOREIGN KEY (image_no) REFERENCES e_image(image_no)
+);
+
+
+-- Création de la table e_titre
+CREATE TABLE e_titre (
+    titre VARCHAR2(25) NOT NULL,
+    CONSTRAINT pk_e_titre PRIMARY KEY (titre)
+);
+
+
+-- Création de la table e_emp
+CREATE TABLE e_emp (
+    emp_no NUMBER(7) NOT NULL,
+    nom VARCHAR2(25) NOT NULL,
+    prenom VARCHAR2(25),
+    utilisateur VARCHAR2(8),
+    dt_entree DATE,
+    commentaires VARCHAR2(255),
+    superieur_no NUMBER(7),
+    titre VARCHAR2(25),
+    service_no NUMBER(7),
+    salaire NUMBER(11, 2),
+    pct_commission NUMBER(4, 2),
+    CONSTRAINT pk_e_emp PRIMARY KEY (emp_no),
+    CONSTRAINT fk_e_emp_superieur FOREIGN KEY (superieur_no) REFERENCES e_emp(emp_no),
+    CONSTRAINT fk_e_emp_titre FOREIGN KEY (titre) REFERENCES e_titre(titre),
+    CONSTRAINT fk_e_emp_service FOREIGN KEY (service_no) REFERENCES e_service(service_no)
+);
+
+
+-- Création de la table e_entrepot
+CREATE TABLE e_entrepot (
+    entrepot_no NUMBER(7) NOT NULL,
+    continent_no NUMBER(7),
+    pays VARCHAR2(20),
+    adresse LONG,
+    ville VARCHAR2(20),
+    departement VARCHAR2(20),
+    code_postal VARCHAR2(5),
+    telephone VARCHAR2(20),
+    superieur_no NUMBER(7),
+    CONSTRAINT pk_e_entrepot PRIMARY KEY (entrepot_no),
+    CONSTRAINT fk_e_entrepot_continent FOREIGN KEY (continent_no) REFERENCES e_continent(continent_no),
+    CONSTRAINT fk_e_entrepot_superieur FOREIGN KEY (superieur_no) REFERENCES e_emp(emp_no)
+);
+
+
+
+-- Création de la table e_client
+CREATE TABLE e_client (
+    client_no NUMBER(7) NOT NULL,
+    nom VARCHAR2(25) NOT NULL,
+    telephone VARCHAR2(20),
+    adresse VARCHAR2(255),
+    ville VARCHAR2(20),
+    departement VARCHAR2(20),
+    code_postal VARCHAR2(5),
+    pays VARCHAR2(20),
+    continent_no NUMBER(7),
+    solvabilite VARCHAR2(10),
+    emp_no NUMBER(7),
+    commentaires VARCHAR2(255),
+    CONSTRAINT pk_e_client PRIMARY KEY (client_no),
+    CONSTRAINT fk_e_client_continent FOREIGN KEY (continent_no) REFERENCES e_continent(continent_no),
+    CONSTRAINT fk_e_client_emp FOREIGN KEY (emp_no) REFERENCES e_emp(emp_no)
+);
+
+
+
+-- Création de la table e_commande
+CREATE TABLE e_commande (
+    commande_no NUMBER(7) NOT NULL,
+    client_no NUMBER(7) NOT NULL,
+    dt_commande DATE,
+    dt_livraison DATE,
+    emp_no NUMBER(7),
+    total NUMBER(11, 2),
+    nt_paiement VARCHAR2(1),
+    validite VARCHAR2(1),
+    CONSTRAINT pk_e_commande PRIMARY KEY (commande_no),
+    CONSTRAINT fk_e_commande_client FOREIGN KEY (client_no) REFERENCES e_client(client_no),
+    CONSTRAINT fk_e_commande_emp FOREIGN KEY (emp_no) REFERENCES e_emp(emp_no)
+);
+
+-- Création de la table e_ligne
+CREATE TABLE e_ligne (
+    commande_no NUMBER(7) NOT NULL,
+    ligne_no NUMBER(7) NOT NULL,
+    produit_no NUMBER(7),
+    prix NUMBER(11, 2),
+    quantite NUMBER(9),
+    qte_livree NUMBER(9),
+    CONSTRAINT pk_e_ligne PRIMARY KEY (commande_no, ligne_no),
+    CONSTRAINT fk_e_ligne_commande FOREIGN KEY (commande_no) REFERENCES e_commande(commande_no),
+    CONSTRAINT fk_e_ligne_produit FOREIGN KEY (produit_no) REFERENCES e_produit(produit_no)
+);
+
+
+-- Création de la table e_stock
+CREATE TABLE e_stock (
+    produit_no NUMBER(7) NOT NULL,
+    entrepot_no NUMBER(7) NOT NULL,
+    stock_securit NUMBER(9),
+    max_stock NUMBER(9),
+    qt_stockee NUMBER(9),
+    detail_sortie VARCHAR2(255),
+    dt_stock DATE,
+    CONSTRAINT pk_e_stock PRIMARY KEY (produit_no, entrepot_no),
+    CONSTRAINT fk_e_stock_produit FOREIGN KEY (produit_no) REFERENCES e_produit(produit_no),
+    CONSTRAINT fk_e_stock_entrepot FOREIGN KEY (entrepot_no) REFERENCES e_entrepot(entrepot_no)
+);
+
+
+*******************************************************
+Création des séquences
+*******************************************************
+-- Création des séquences pour chaque table
+
+-- Séquence pour la table e_continent
+CREATE SEQUENCE seq_continent
+    START WITH 1
+    INCREMENT BY 1
+    NOCACHE
+    NOCYCLE;
+
+-- Séquence pour la table e_titre
+CREATE SEQUENCE seq_titre
+    START WITH 1
+    INCREMENT BY 1
+    NOCACHE
+    NOCYCLE;
+
+-- Séquence pour la table e_service
+CREATE SEQUENCE seq_service
+    START WITH 1
+    INCREMENT BY 1
+    NOCACHE
+    NOCYCLE;
+
+-- Séquence pour la table e_emp
+CREATE SEQUENCE seq_emp
+    START WITH 1
+    INCREMENT BY 1
+    NOCACHE
+    NOCYCLE;
+
+-- Séquence pour la table e_client
+CREATE SEQUENCE seq_client
+    START WITH 1
+    INCREMENT BY 1
+    NOCACHE
+    NOCYCLE;
+
+-- Séquence pour la table e_produit
+CREATE SEQUENCE seq_produit
+    START WITH 1
+    INCREMENT BY 1
+    NOCACHE
+    NOCYCLE;
+
+-- Séquence pour la table e_image
+CREATE SEQUENCE seq_image
+    START WITH 1
+    INCREMENT BY 1
+    NOCACHE
+    NOCYCLE;
+
+-- Séquence pour la table e_texte
+CREATE SEQUENCE seq_texte
+    START WITH 1
+    INCREMENT BY 1
+    NOCACHE
+    NOCYCLE;
+
+-- Séquence pour la table e_commande
+CREATE SEQUENCE seq_commande
+    START WITH 1
+    INCREMENT BY 1
+    NOCACHE
+    NOCYCLE;
+
+-- Séquence pour la table e_ligne
+CREATE SEQUENCE seq_ligne
+    START WITH 1
+    INCREMENT BY 1
+    NOCACHE
+    NOCYCLE;
+
+-- Séquence pour la table e_stock
+CREATE SEQUENCE seq_stock
+    START WITH 1
+    INCREMENT BY 1
+    NOCACHE
+    NOCYCLE;
+
+CREATE SEQUENCE seq_entrepot
+    START WITH 1          
+    INCREMENT BY 1        
+    NOCACHE               
+    NOCYCLE;              
+
+
+
+
+*******************************************************
+Alimentation de la base de données
+*******************************************************
+
+
+-- Insertion dans la table e_continent
+INSERT INTO e_continent (continent_no, nom) VALUES (seq_continent.nextval, 'Afrique');
+INSERT INTO e_continent (continent_no, nom) VALUES (seq_continent.nextval, 'Europe');
+INSERT INTO e_continent (continent_no, nom) VALUES (seq_continent.nextval, 'Asie');
+
+-- Insertion dans la table e_titre
+INSERT INTO e_titre (titre) VALUES ('Manager');
+INSERT INTO e_titre (titre) VALUES ('Vendeur');
+INSERT INTO e_titre (titre) VALUES ('Directeur');
+
+-- Insertion dans la table e_service
+INSERT INTO e_service (service_no, nom, continent_no) VALUES (seq_service.nextval, 'Service 1', 1);
+INSERT INTO e_service (service_no, nom, continent_no) VALUES (seq_service.nextval, 'Service 2', 2);
+INSERT INTO e_service (service_no, nom, continent_no) VALUES (seq_service.nextval, 'Service 3', 3);
+
+-- Insertion dans la table e_emp
+INSERT INTO e_emp (emp_no, nom, prenom, utilisateur, dt_entree, superieur_no, titre, service_no, salaire, pct_commission) 
+VALUES (seq_emp.nextval, 'Dupont', 'Jean', 'jdupont', TO_DATE('2021-01-01', 'YYYY-MM-DD'), NULL, 'Manager', 1, 3500, 10);
+INSERT INTO e_emp (emp_no, nom, prenom, utilisateur, dt_entree, superieur_no, titre, service_no, salaire, pct_commission) 
+VALUES (seq_emp.nextval, 'Martin', 'Claire', 'cmartin', TO_DATE('2022-02-15', 'YYYY-MM-DD'), 1, 'Vendeur', 2, 2800, 5);
+INSERT INTO e_emp (emp_no, nom, prenom, utilisateur, dt_entree, superieur_no, titre, service_no, salaire, pct_commission) 
+VALUES (seq_emp.nextval, 'Durand', 'Michel', 'mdurand', TO_DATE('2020-06-20', 'YYYY-MM-DD'), 2, 'Directeur', 3, 5000, 8);
+
+-- Insertion dans la table e_client
+INSERT INTO e_client (client_no, nom, telephone, adresse, ville, departement, code_postal, pays, continent_no, solvabilite, emp_no, commentaires) 
+VALUES (seq_client.nextval, 'Client A', '0123456789', '123 rue de Paris', 'Paris', '75', '75000', 'France', 2, 'Solvable', 2, 'Client important');
+INSERT INTO e_client (client_no, nom, telephone, adresse, ville, departement, code_postal, pays, continent_no, solvabilite, emp_no, commentaires) 
+VALUES (seq_client.nextval, 'Client B', '0987654321', '456 avenue de Lyon', 'Lyon', '69', '69000', 'France', 1, 'Solvable', 3, 'Nouvelle commande');
+INSERT INTO e_client (client_no, nom, telephone, adresse, ville, departement, code_postal, pays, continent_no, solvabilite, emp_no, commentaires) 
+VALUES (seq_client.nextval, 'Client C', '0567890123', '789 boulevard de Marseille', 'Marseille', '13', '13000', 'France', 3, 'Insolvable', 1, 'Ancien client');
+
+-- Insertion dans la table e_image
+INSERT INTO e_image (image_no, format, nom_fichier, validite) 
+VALUES (seq_image.nextval, 'JPEG', 'produit_x.jpg', 'O');
+INSERT INTO e_image (image_no, format, nom_fichier, validite) 
+VALUES (seq_image.nextval, 'PNG', 'produit_y.png', 'O');
+INSERT INTO e_image (image_no, format, nom_fichier, validite) 
+VALUES (seq_image.nextval, 'JPEG', 'produit_z.jpg', 'O');
+
+-- Insertion dans la table e_texte
+INSERT INTO e_texte (texte_no, validite, nom_fichier, texte) 
+VALUES (seq_texte.nextval, 'O', 'produit_x.txt', 'Description du produit X');
+INSERT INTO e_texte (texte_no, validite, nom_fichier, texte) 
+VALUES (seq_texte.nextval, 'O', 'produit_y.txt', 'Description du produit Y');
+INSERT INTO e_texte (texte_no, validite, nom_fichier, texte) 
+VALUES (seq_texte.nextval, 'O', 'produit_z.txt', 'Description du produit Z');
+
+-- Insertion dans la table e_produit
+INSERT INTO e_produit (produit_no, nom, description, texte_no, image_no, prix_conseille) 
+VALUES (seq_produit.nextval, 'Produit X', 'Description Produit X', 1, 1, 100.00);
+INSERT INTO e_produit (produit_no, nom, description, texte_no, image_no, prix_conseille) 
+VALUES (seq_produit.nextval, 'Produit Y', 'Description Produit Y', 2, 2, 150.00);
+INSERT INTO e_produit (produit_no, nom, description, texte_no, image_no, prix_conseille) 
+VALUES (seq_produit.nextval, 'Produit Z', 'Description Produit Z', 3, 3, 200.00);
+
+
+
+-- Insertion dans la table e_commande
+INSERT INTO e_commande (commande_no, client_no, dt_commande, dt_livraison, emp_no, total, nt_paiement, validite) 
+VALUES (seq_commande.nextval, 1, TO_DATE('2024-11-01', 'YYYY-MM-DD'), TO_DATE('2024-11-05', 'YYYY-MM-DD'), 2, 300.00, 'C', 'O');
+INSERT INTO e_commande (commande_no, client_no, dt_commande, dt_livraison, emp_no, total, nt_paiement, validite) 
+VALUES (seq_commande.nextval, 2, TO_DATE('2024-11-02', 'YYYY-MM-DD'), TO_DATE('2024-11-06', 'YYYY-MM-DD'), 3, 450.00, 'N', 'O');
+INSERT INTO e_commande (commande_no, client_no, dt_commande, dt_livraison, emp_no, total, nt_paiement, validite) 
+VALUES (seq_commande.nextval, 3, TO_DATE('2024-11-03', 'YYYY-MM-DD'), TO_DATE('2024-11-07', 'YYYY-MM-DD'), 1, 600.00, 'C', 'O');
+
+
+-- Insertion dans la table e_ligne
+INSERT INTO e_ligne (commande_no, ligne_no, produit_no, prix, quantite, qte_livree) 
+VALUES (1, 1, 1, 100.00, 3, 3);
+INSERT INTO e_ligne (commande_no, ligne_no, produit_no, prix, quantite, qte_livree) 
+VALUES (2, 1, 1, 150.00, 2, 2);
+INSERT INTO e_ligne (commande_no, ligne_no, produit_no, prix, quantite, qte_livree) 
+VALUES (3, 1, 3, 200.00, 1, 1);
+
+
+
+-- Insertion dans la table e_entrepot
+INSERT INTO e_entrepot (entrepot_no, continent_no, pays, adresse, ville, departement, code_postal, telephone, superieur_no)
+VALUES (seq_entrepot.nextval, 1, 'France', '123 Rue des Lilas', 'Paris', 'Ile-de-France', '75000', '0140203040', NULL);
+INSERT INTO e_entrepot (entrepot_no, continent_no, pays, adresse, ville, departement, code_postal, telephone, superieur_no)
+VALUES (seq_entrepot.nextval, 2, 'Espagne', '456 Avenida Sol', 'Madrid', 'Madrid', '28001', '+34 912345678', 1);
+INSERT INTO e_entrepot (entrepot_no, continent_no, pays, adresse, ville, departement, code_postal, telephone, superieur_no)
+VALUES (seq_entrepot.nextval, 3, 'Allemagne', '789 Strasse Rosen', 'Berlin', 'Berlin', '10115', '+49 3020203040', 2);
+INSERT INTO e_entrepot (entrepot_no, continent_no, pays, adresse, ville, departement, code_postal, telephone, superieur_no)
+VALUES (seq_entrepot.nextval, 1, 'Italie', 'Via Roma 101', 'Rome', 'Lazio', '00100', '+39 064123456', 3);
+INSERT INTO e_entrepot (entrepot_no, continent_no, pays, adresse, ville, departement, code_postal, telephone, superieur_no)
+VALUES (seq_entrepot.nextval, 3, 'Belgique', 'Rue Verte 25', 'Bruxelles', 'Bruxelles-Capitale', '1000', '+32 25123456', 1);
+
+
+
+-- Insertion dans la table e_stock
+INSERT INTO e_stock (produit_no, entrepot_no, stock_securit, max_stock, qt_stockee, detail_sortie, dt_stock) 
+VALUES (1, 1, 10, 100, 50, 'Premier lot', TO_DATE('2024-11-01', 'YYYY-MM-DD'));
+INSERT INTO e_stock (produit_no, entrepot_no, stock_securit, max_stock, qt_stockee, detail_sortie, dt_stock) 
+VALUES (2, 2, 20, 150, 75, 'Deuxième lot', TO_DATE('2024-11-02', 'YYYY-MM-DD'));
+INSERT INTO e_stock (produit_no, entrepot_no, stock_securit, max_stock, qt_stockee, detail_sortie, dt_stock) 
+VALUES (3, 3, 5, 200, 25, 'Troisième lot', TO_DATE('2024-11-03', 'YYYY-MM-DD'));
+
+COMMIT;
