@@ -19,7 +19,6 @@ declare
   
 begin
 
---  insert into e_produit(produit_no, nom, description, texte_no, image_no, prix_conseille) value()
   e_produit(1).produit_no := 1000;
   e_produit(1).nom := 'zk1';
   e_produit(1).description := 'zkzk1';
