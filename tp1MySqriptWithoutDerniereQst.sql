@@ -1,4 +1,3 @@
---TP1 PLSQL
 --Q1 :
 
 
@@ -20,6 +19,7 @@ declare
   
 begin
 
+--  insert into e_produit(produit_no, nom, description, texte_no, image_no, prix_conseille) value()
   e_produit(1).produit_no := 1000;
   e_produit(1).nom := 'zk1';
   e_produit(1).description := 'zkzk1';
@@ -56,7 +56,7 @@ end;
 /
 
 
---Qst2 :
+--Q2 :
 
 
 
@@ -192,7 +192,7 @@ begin
     DBMS_OUTPUT.PUT_LINE('Description : ' || v_description);
     DBMS_OUTPUT.PUT_LINE('Prix conseillé modifié : ' || v_prix_conseille);
   ELSE
-    DBMS_OUTPUT.PUT_LINE('Aucun produit mis à jour. Aucun produit avec le nom "Produit X" trouvé.');
+    DBMS_OUTPUT.PUT_LINE('Aucun produit mis à jour.');
   END IF;
     
 
@@ -256,5 +256,72 @@ begin
     
 
    
+end;
+/
+
+
+--Q5_c :
+
+declare
+  v_count NUMBER;
+  
+  v_nom e_produit.nom%TYPE;
+  v_description e_produit.description%TYPE;
+  v_prix_conseille e_produit.prix_conseille%TYPE;
+  
+begin
+
+  update e_produit set PRIX_CONSEILLE =1500 where nom ='Produit X' ;
+  v_count := SQL%ROWCOUNT;
+  
+  IF v_count > 0 THEN
+    SELECT nom, description, prix_conseille
+    INTO v_nom, v_description, v_prix_conseille
+    FROM e_produit
+    WHERE PRIX_CONSEILLE = 1500 AND nom = 'Produit X'
+    AND ROWNUM = 1;
+    
+    DBMS_OUTPUT.PUT_LINE('Le produit modifié a le nom : ' || v_nom);
+    DBMS_OUTPUT.PUT_LINE('Description : ' || v_description);
+    DBMS_OUTPUT.PUT_LINE('Prix conseillé modifié : ' || v_prix_conseille);
+  ELSE
+    DBMS_OUTPUT.PUT_LINE('Aucun produit mis à jour. Aucun produit avec le nom "Produit X" trouvé.');
+  END IF;
+  
+  
+  INSERT INTO e_produit (produit_no, nom, description, prix_conseille)
+  VALUES(e_produit_seq.NEXTVAL, 'Produit Y', 'Description du produit Y', 2000);
+
+  v_count := SQL%ROWCOUNT;
+
+  IF v_count > 0 THEN
+    SELECT nom, description, prix_conseille
+    INTO v_nom, v_description, v_prix_conseille
+    FROM e_produit
+    WHERE nom = 'Produit Y' AND ROWNUM = 1;
+
+    DBMS_OUTPUT.PUT_LINE('Le nouveau produit inséré a le nom : ' || v_nom);
+    DBMS_OUTPUT.PUT_LINE('Description : ' || v_description);
+    DBMS_OUTPUT.PUT_LINE('Prix conseillé : ' || v_prix_conseille);
+  ELSE
+    DBMS_OUTPUT.PUT_LINE('L insertion du nouveau produit a échoué.');
+  END IF;
+  
+    
+  
+  DBMS_OUTPUT.PUT_LINE('la liste des numéros de produits qui n’ont jamais été commandés sont : '  );
+  FOR rec IN (
+    SELECT p.produit_no, p.nom, p.description
+    FROM e_produit p
+    WHERE NOT EXISTS (
+      SELECT 1 
+      FROM e_ligne l 
+      WHERE l.produit_no = p.produit_no
+    )
+  ) LOOP
+    DBMS_OUTPUT.PUT_LINE('Numéro du produit : ' || rec.produit_no);
+     DBMS_OUTPUT.PUT_LINE('nom du produit : ' || rec.nom);
+      DBMS_OUTPUT.PUT_LINE('description du produit : ' || rec.description);
+  END LOOP;
 end;
 /
