@@ -33,7 +33,7 @@ end loop;
 END;
 /
 
---Qst1 b :
+--Quest1 b :
 
 DECLARE
 v_nom e_emp.nom%type;
