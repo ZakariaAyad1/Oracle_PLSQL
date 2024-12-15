@@ -75,7 +75,7 @@ END;
 /
 
 
---Qst2 :
+--Qst2 ::
 
 create or replace procedure prime(p_emp_no IN number , taux IN number) is
 v_salaire e_emp.salaire%type;
