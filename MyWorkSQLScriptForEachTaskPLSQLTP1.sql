@@ -1,6 +1,6 @@
 /*
-QST2-a:
-*/
+QST2- a:
+*/ 
 
 DECLARE
     -- Déclaration d'un type d'enregistrement pour un produit
